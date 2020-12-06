@@ -12,7 +12,7 @@ time_table_drop = "DROP TABLE IF EXISTS time"
 # songplays - records in log data associated with song plays i.e. records with page NextSong
 songplay_table_create = ("""
 CREATE TABLE IF NOT EXISTS songplays (songplay_id int, start_time timestamp, user_id int, level int, 
-    song_id int, artist_id int, session_id int, location varchart, user_agent varchar)
+    song_id int, artist_id int, session_id int, location varchar, user_agent varchar)
 """)
 
 # users - users in the app
