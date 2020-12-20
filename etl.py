@@ -7,37 +7,45 @@ from sql_queries import *
 
 def process_song_file(cur, filepath):
     # open song file
-    df = 
+    df = pd.DataFrame(pd.read_json(filepath,typ='series')).T
 
     # insert song record
-    song_data = 
+    song_data = df[['song_id', 'title', 'artist_id', 'year', 'duration']].values[0].tolist()
+    print(song_data)
     cur.execute(song_table_insert, song_data)
     
     # insert artist record
-    artist_data = 
+    artist_data = df[['artist_id', 'artist_name', 'artist_location', 'artist_latitude', 'artist_longitude']].values[0].tolist()
     cur.execute(artist_table_insert, artist_data)
 
 
 def process_log_file(cur, filepath):
     # open log file
-    df = 
-
+    df = pd.DataFrame(pd.read_json(filepath,lines=True))
+    
     # filter by NextSong action
-    df = 
+    df = df[df['page']=='NextSong']
 
     # convert timestamp column to datetime
-    t = 
+    df['ts'] = df['ts'].apply(lambda ts: pd.to_datetime(ts, unit='ms'))
+    t = df[['ts']].copy()
+    t['hour'] = t['ts'].apply(lambda ts: ts.hour)
+    t['day'] = t['ts'].apply(lambda ts: ts.day)
+    t['week'] = t['ts'].apply(lambda ts: ts.week)
+    t['month'] = t['ts'].apply(lambda ts: ts.month)
+    t['year'] = t['ts'].apply(lambda ts: ts.year)
+    t['weekday'] = t['ts'].apply(lambda ts: ts.weekday())
+    t.rename(columns={'ts':'timestamp'}, inplace=True)
     
-    # insert time data records
-    time_data = 
-    column_labels = 
-    time_df = 
-
+    # # insert time data records
+    # time_data = t.copy()
+    # column_labels = time_data.columns
+    time_df = t
     for i, row in time_df.iterrows():
         cur.execute(time_table_insert, list(row))
 
     # load user table
-    user_df = 
+    user_df = df[['userId', 'firstName', 'lastName', 'gender', 'level']]
 
     # insert user records
     for i, row in user_df.iterrows():
@@ -47,8 +55,11 @@ def process_log_file(cur, filepath):
     for index, row in df.iterrows():
         
         # get songid and artistid from song and artist tables
-        cur.execute(song_select, (row.song, row.artist, row.length))
-        results = cur.fetchone()
+        try:
+            cur.execute(song_select, (row.song, row.artist, row.length))
+            results = cur.fetchone()
+        except:
+            results=None
         
         if results:
             songid, artistid = results
@@ -56,7 +67,8 @@ def process_log_file(cur, filepath):
             songid, artistid = None, None
 
         # insert songplay record
-        songplay_data = 
+        songplay_data = (row.ts, row.userId, row.level, songid, artistid, row.sessionId,
+                        row.location, row.userAgent)
         cur.execute(songplay_table_insert, songplay_data)
 
 
